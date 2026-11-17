@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Millikan Oil Drop v2</title>
+<style>
+:root{--bg:#0B1A2B;--panel:#0F2236;--panel2:#132a42;--line:rgba(150,180,215,.28);--grid:rgba(150,180,215,.09);--txt:#EEE8DA;--mut:#8C9DB2;--green:#7FD4A8;--amber:#E8B23A;--bad:#E5736B;
+--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:34px 34px;color:var(--txt);
+font-family:system-ui,-apple-system,"Sukhumvit Set","Noto Sans Thai","Segoe UI",sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:var(--txt);background:rgba(15,34,54,.85);border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button:active{transform:scale(.96)}
+input,textarea{font:inherit;color:var(--txt);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.mono{font-family:var(--mono)}
+/* header */
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(11,26,43,.92)}
+.ttl{flex:1;min-width:0}
+.ttl h1{font-size:20px;margin:0;font-weight:700;cursor:default;-webkit-user-select:none;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl .sub{font-size:13px;color:var(--mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{min-width:46px;height:44px;padding:0 12px;background:transparent;font-size:16px;font-weight:600}
+.hbtn.sel{border-color:var(--green);color:var(--green)}
+.hbtn.flash{border-color:var(--green);background:var(--green);color:#0B1A2B;transition:none}
+.hbtn.tch{border-color:var(--amber);color:var(--amber)}
+/* center */
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+.view{display:none;flex:1;min-height:0}
+.view.act{display:flex;flex-direction:column}
+#vLab .stage{flex:1;min-height:0;position:relative}
+#scope{position:absolute;inset:0;width:100%;height:100%;display:block}
+.chips{display:flex;gap:8px;padding:8px 12px;overflow-x:auto;flex-wrap:nowrap;border-top:1px solid var(--line);background:rgba(11,26,43,.75);scrollbar-width:none;align-items:center}
+.chips::-webkit-scrollbar{display:none}
+.chips>:first-child{margin-left:auto}.chips>:last-child{margin-right:auto}
+.chip{flex:none;height:46px;padding:0 14px;font-size:16px;white-space:nowrap}
+.chip.sel{border-color:var(--green);color:var(--green)}
+.chip.amb{border-color:var(--amber);color:var(--amber)}
+.chip.ic{min-width:48px;padding:0 12px;font-size:20px;display:flex;align-items:center;gap:6px}
+.lbl{font-size:16px}
+.ebtn{flex:none;width:72px;height:46px;padding:0}
+.ebtn svg{display:block;margin:auto}
+.ebtn.on{border-color:var(--green);background:rgba(127,212,168,.14)}
+.ebtn.onm{border-color:var(--amber);background:rgba(232,178,58,.14)}
+.vctl{flex:1 1 0;width:0;min-width:0;max-width:520px;display:flex;align-items:center;gap:6px}
+.chip.arr{width:48px;padding:0;font-size:18px;color:var(--green)}
+#vSl{flex:1 1 0;width:0;min-width:40px;-webkit-appearance:auto;height:46px;accent-color:#7FD4A8;margin:0}
+.vread{flex:none;font-size:22px;font-weight:700;min-width:84px;text-align:right}
+#btnLow.hid,#btnHome.hid{display:none!important}
+#btnLow,#btnHome{font-size:24px!important;font-weight:800;color:var(--green)}
+.chip.hov{flex:none;padding:0 12px;font-size:15px;border-color:var(--amber);color:var(--amber);white-space:nowrap}
+.chip.rec{flex:none;padding:0 10px;font-family:var(--mono);font-weight:800;font-size:15px;letter-spacing:1px;color:#E5736B;border-color:rgba(229,115,107,.6);display:flex;align-items:center;gap:6px}
+.chip.rec::before{content:"";width:9px;height:9px;border-radius:50%;background:#E5736B}
+.sep{flex:none;width:1px;height:30px;background:var(--line);margin:0 2px}
+.scroll{flex:1;min-height:0;overflow:auto;padding:12px 14px}
+/* data */
+.tools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.dlab{display:flex;align-items:center;gap:6px;height:46px;padding:0 10px;border:1.5px solid var(--green);border-radius:10px;color:var(--green);font-size:15px}
+.dlab input{width:70px;font-family:var(--mono);font-size:17px;text-align:center;color:var(--txt)}
+.tblWrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:rgba(15,34,54,.6)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:center;white-space:nowrap}
+th{background:var(--panel2);color:var(--mut);font-weight:600;position:sticky;top:0}
+td{font-family:var(--mono)}
+td input{width:56px;text-align:center;padding:5px;font-family:var(--mono)}
+tr.hl td{background:rgba(127,212,168,.16)}
+td.calc,th.calc{color:var(--green)}td.ans,th.ans{color:var(--amber)}
+.xbtn{background:transparent;border:none;color:var(--mut);font-size:18px;padding:4px 8px}
+/* guide */
+.guide{max-width:880px;line-height:1.65}
+.guide h3{color:var(--green);margin:16px 0 6px;font-size:17px}
+.eq{background:rgba(15,34,54,.8);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:6px 0;font-family:var(--mono);font-size:16px}
+/* stopwatch bar */
+.swbar{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 12px 4px;border-top:1px solid var(--line);background:rgba(9,21,35,.96)}
+#swDisp{font-family:var(--mono);font-size:32px;font-weight:700;letter-spacing:1px;min-width:180px;text-align:center}
+#btnSW{width:110px;height:54px;font-size:24px;background:#3F7A5A;border-color:var(--green);color:#fff}
+#btnSW.run{background:#7a5a24;border-color:var(--amber)}
+#btnSWR{width:76px;height:54px;font-size:24px}
+#btnRec{height:54px;padding:0 14px;font-size:16px;border-color:var(--amber);color:var(--amber);white-space:nowrap}
+footer{font-size:12px;color:var(--mut);text-align:center;padding:3px 10px 6px;background:rgba(9,21,35,.96);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:50;padding:12px}
+.modal.show{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;width:min(560px,100%);max-height:92vh;overflow:auto}
+.mbox h2{margin:0 0 12px;font-size:18px;color:var(--amber)}
+.fgrid{display:grid;grid-template-columns:1fr 130px;gap:8px 10px;align-items:center}
+.fgrid input[type=number]{width:100%;font-family:var(--mono)}
+.fgrid label{font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+textarea{width:100%;min-height:70px;font-size:12px;font-family:var(--mono)}
+.warnbox{color:var(--amber);font-size:13px;margin-top:6px}
+#toast{position:fixed;left:50%;top:84px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--green);color:var(--txt);padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:60;font-size:15px;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+@media (max-width:980px){
+ .chips{gap:6px;padding:8px}
+ .lbl{display:none}
+ .chip.ic{min-width:44px;padding:0 8px}
+}
+@media (max-width:600px){
+ .lbl,.vread{display:none}
+ .chips{gap:5px;padding:8px 6px}
+ .chip.ic{min-width:38px;padding:0 4px;font-size:18px}
+ .chip.arr{width:36px}
+ .ebtn{width:52px}
+ .chip.hov{padding:0 6px;font-size:13px}
+ .chips>:first-child,.chips>:last-child{margin:0}
+ .sep{display:none}
+ .chip{height:42px}
+ .ttl h1{font-size:17px}.ttl .sub{font-size:12px}
+ .hbtn{min-width:40px;height:40px;padding:0 9px;font-size:15px}
+ header{gap:6px;padding:8px 10px}
+ #swDisp{font-size:24px;min-width:128px}
+ #btnSW{width:72px;height:48px}#btnSWR{width:54px;height:48px}#btnRec{height:48px;padding:0 10px;font-size:14px}
+ .swbar{gap:7px}
+ footer{font-size:10px}
+}
+@media (max-width:430px){
+ #btnHome{display:none}
+ .chip.ic{min-width:40px;padding:0 6px}
+ .chip.arr{width:36px}
+ .chip.rec{padding:0 7px;font-size:13px;gap:4px}
+ .chip.hov{padding:0 7px;font-size:13px}
+ .ebtn{width:54px}
+ .vctl{gap:4px}
+}
+</style>
+</head>
+<body>
+<header>
+ <div class="ttl">
+  <h1 id="appTitle" data-i18n="title">Millikan Oil Drop</h1>
+  <div class="sub"><span id="lockBadge" style="display:none">🔒 </span><span data-i18n="sub">Time the oil drop, find the elementary charge e</span></div>
+ </div>
+ <button id="btnData" class="hbtn" aria-label="Data">📋</button>
+ <button id="btnGuide" class="hbtn" aria-label="Guide">?</button>
+ <button id="btnFull" class="hbtn" aria-label="Full screen">⛶</button>
+ <button id="btnLang" class="hbtn mono">ไทย</button>
+ <button id="btnTeacher" class="hbtn" data-i18n="teacher">Teacher</button>
+</header>
+
+<main>
+ <section id="vLab" class="view act">
+  <div class="stage"><canvas id="scope"></canvas></div>
+  <div class="chips">
+   <button id="btnSpray" class="chip amb ic">💧<span class="lbl" data-i18n="sprayL">Spray</span></button>
+   <button id="btnIon" class="chip ic">☢<span class="lbl" data-i18n="ionL">Ionize</span></button>
+   <button id="btnHome" class="chip ic" aria-label="Drop to top">↺</button>
+   <button id="btnLow" class="chip ic" aria-label="Drop to bottom">⇡<span class="lbl" data-i18n="lowL">Rise</span></button>
+   <button id="btnE" class="chip ebtn" aria-label="Electric field"></button>
+   <div class="vctl">
+    <button id="vDn" class="chip arr" data-dv="-1">◀</button>
+    <input type="range" id="vSl" min="0" max="600" step="1" value="0" aria-label="Voltage">
+    <button id="vUp" class="chip arr" data-dv="1">▶</button>
+    <div class="vread mono"><span id="vVal">0</span> V</div>
+   </div>
+   <button id="btnHover" class="chip hov" style="display:none" data-i18n="hover">⏸ Hover</button>
+  </div>
+ </section>
+
+ <section id="vData" class="view">
+  <div class="scroll">
+   <div class="tools">
+    <label class="dlab"><span data-i18n="distL">Timed distance</span> <input id="distIn" type="number" inputmode="decimal" step="0.1" min="0.05"> mm</label>
+    <button id="btnAddRow" class="chip" data-i18n="addRow">+ Row</button>
+    <button id="btnCSV" class="chip sel" data-i18n="csv">⬇ CSV</button>
+    <button id="btnClear" class="chip" style="color:var(--bad)" data-i18n="clear">Clear all</button>
+   </div>
+   <div class="tblWrap"><table id="tbl"></table></div>
+  </div>
+ </section>
+
+ <section id="vGuide" class="view">
+  <div class="scroll"><div class="guide" id="guideBox"></div></div>
+ </section>
+</main>
+
+<div class="swbar">
+ <button id="btnRec">t₀</button>
+ <div id="swDisp">00:00.00</div>
+ <button id="btnSW">▶</button>
+ <button id="btnSWR">↺</button>
+</div>
+<footer id="credit"></footer>
+
+<div class="modal" id="mPw">
+ <div class="mbox">
+  <h2 data-i18n="pwTitle">Teacher password</h2>
+  <input type="password" id="pwIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%">
+  <div id="pwErr" class="warnbox"></div>
+  <div class="row" style="margin-top:12px">
+   <button id="pwOk" class="chip sel" data-i18n="ok">OK</button>
+   <button id="pwCancel" class="chip" data-i18n="cancel">Cancel</button>
+  </div>
+ </div>
+</div>
+
+<div class="modal" id="mT">
+ <div class="mbox">
+  <h2 data-i18n="tSettings">Teacher Settings</h2>
+  <div class="fgrid" id="fgrid"></div>
+  <div class="row" style="margin-top:12px">
+   <label style="font-size:14px"><input type="checkbox" id="chkAns"> <span data-i18n="showAns">Show answer key (true n, q, r)</span></label>
+  </div>
+  <div class="row" style="margin-top:12px">
+   <button id="tSave" class="chip sel" data-i18n="save">Save &amp; apply</button>
+   <button id="tDef" class="chip" data-i18n="defaults">Defaults</button>
+  </div>
+  <div class="row" style="margin-top:10px">
+   <button id="tLink" class="chip amb" data-i18n="genLink">🔗 Create locked student link</button>
+  </div>
+  <textarea id="linkOut" readonly style="display:none;margin-top:8px"></textarea>
+  <div class="row" style="margin-top:6px"><button id="tCopy" class="chip" style="display:none" data-i18n="copy">Copy link</button></div>
+  <div id="linkWarn" class="warnbox"></div>
+  <div class="row" style="margin-top:14px">
+   <button id="tExit" class="chip" style="color:var(--bad)" data-i18n="exitT">Exit teacher mode</button>
+   <button id="tClose" class="chip" data-i18n="close">Close</button>
+  </div>
+ </div>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var EC=1.602176634e-19, KB=1.380649e-23, TK=298.15;
+var PW='9;5:4*5‘';
+var DEF={d:5,rho:886,eta:1.81e-5,g:9.81,vmax:600,rmin:0.55,rmax:1.0,nmax:6,major:0.5,viewH:3,brown:1,invert:0,calc:0,moveBtns:0};
+var S=Object.assign({},DEF);
+var lang='en', teacher=false, locked=false, showAns=true, view='lab';
+var drop=null, dropCount=0, fieldOn=false, topPlus=true, volt=0;
+var rows=[], rowId=0, lastRowId=0;
+var MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+
+function lsGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function $(id){return document.getElementById(id);}
+
+/* ---------- text ---------- */
+var T={
+en:{title:'Millikan Oil Drop',sub:'Time the oil drop, find the elementary charge e',teacher:'Teacher',
+spray:'💧 Spray',ionize:'☢ Ionize',sprayL:'Spray',ionL:'Ionize',pick:'Tap one drop to follow',picked:'Drop selected ✓',distL:'Timed distance',distWarn:'Longer than the view in the microscope (about {x} mm)',lowL:'Rise',needV:'Raise V until the drop moves up',hover:'⏸ Hover',hovered:'hovering',recFall:'Save t₀',noTime:'Time the drop with the stopwatch first',recRise:'Save tᵥ',h_no:'#',cur:'Run',
+addRow:'+ Row',csv:'⬇ CSV',clear:'Clear all',
+pwTitle:'Teacher password',ok:'OK',cancel:'Cancel',pwWrong:'Wrong password',tSettings:'Teacher Settings',showAns:'Show answer key (true n, q, r)',save:'Save & apply',defaults:'Defaults',
+genLink:'🔗 Create locked student link',copy:'Copy link',exitT:'Exit teacher mode',close:'Close',
+noDrop:'Press 💧 Spray',lost:'Drop lost — spray a new one',dropIs:'drop {id} · state {s}',
+noDropRec:'Spray and tap a drop first',recorded:'Recorded ✓',
+ionized:'Ionized — charge may have changed',ionFail:'Charge did not change — try again',
+cantMake:'These settings cannot make a drop that can be balanced. Increase maximum voltage or maximum charge.',
+h_drop:'Drop',h_state:'st',h_dist:'d (mm)',h_tf:'t₀ (s)',h_tr:'tᵥ (s)',h_v:'V↑ (V)',h_vh:'V₀ (V)',
+h_vf:'v_fall (mm/s)',h_r:'r (µm)',h_q:'q (×10⁻¹⁹ C)',h_qe:'q / e',h_tn:'True n',h_tq:'True q (×10⁻¹⁹ C)',h_tr2:'True r (µm)',
+confirmClear:'Tap again to delete all',saved:'Settings saved',linkMade:'Link created — share it with students',copied:'Link copied',
+noHost:'This file is not on a website yet (e.g. GitHub Pages), so the link will not work. Upload the file first, then create the link.',
+noFull:'Full screen is not available in this browser. On iPad: Share → Add to Home Screen.',
+f_d:'Plate separation d (mm)',f_rho:'Oil density ρ (kg/m³)',f_eta:'Air viscosity η (Pa·s)',f_g:'g (m/s²)',f_vmax:'Maximum voltage (V)',
+f_rmin:'Min drop radius (µm)',f_rmax:'Max drop radius (µm)',f_nmax:'Max charge (number of e)',f_major:'Major reticle spacing (mm)',f_viewH:'Field of view height (mm)',
+f_brown:'Brownian motion (realistic jitter)',f_invert:'Inverted microscope image',f_calc:'Show calculated r and q to students',f_move:'Show ↺ ⇡ buttons (move drop to top/bottom) to students'},
+th:{title:'การทดลองหยดน้ำมันของมิลลิแกน',sub:'จับเวลาหยดน้ำมัน แล้วหาประจุมูลฐาน e',teacher:'ครู',
+spray:'💧 พ่นหยด',ionize:'☢ ฉายรังสี',sprayL:'พ่นหยด',ionL:'ฉายรังสี',pick:'แตะเลือก 1 หยดที่จะติดตาม',picked:'เลือกหยดแล้ว ✓',distL:'ระยะที่จับเวลา',distWarn:'ยาวเกินภาพในกล้อง (เห็นได้ประมาณ {x} mm)',lowL:'ลอยขึ้น',needV:'เพิ่ม V จนหยดเคลื่อนขึ้น',hover:'⏸ ลอยนิ่ง',hovered:'ลอยนิ่ง',recFall:'บันทึก t₀',noTime:'จับเวลาด้วยนาฬิกาก่อน แล้วค่อยกดบันทึก',recRise:'บันทึก tᵥ',h_no:'ครั้งที่',cur:'ครั้งที่',
+addRow:'+ แถว',csv:'⬇ CSV',clear:'ลบทั้งหมด',
+pwTitle:'รหัสผ่านครู',ok:'ตกลง',cancel:'ยกเลิก',pwWrong:'รหัสผ่านไม่ถูกต้อง',tSettings:'ตั้งค่าสำหรับครู',showAns:'แสดงเฉลย (n, q, r จริง)',save:'บันทึกและใช้งาน',defaults:'ค่าเริ่มต้น',
+genLink:'🔗 สร้างลิงก์นักศึกษา (ล็อกค่า)',copy:'คัดลอกลิงก์',exitT:'ออกจากโหมดครู',close:'ปิด',
+noDrop:'กด 💧 พ่นหยด',lost:'หยดหายไป — พ่นหยดใหม่',dropIs:'หยด {id} · สถานะ {s}',
+noDropRec:'พ่นหยด แล้วแตะเลือก 1 หยดก่อน',recorded:'บันทึกแล้ว ✓',
+ionized:'ฉายรังสีแล้ว — ประจุอาจเปลี่ยน',ionFail:'ประจุไม่เปลี่ยน — ลองอีกครั้ง',
+cantMake:'ค่าที่ตั้งไว้ไม่สามารถสร้างหยดที่ทำให้ลอยนิ่งได้ กรุณาเพิ่มความต่างศักย์สูงสุดหรือประจุสูงสุด',
+h_drop:'หยด',h_state:'สถานะ',h_dist:'ระยะ (mm)',h_tf:'t₀ (s)',h_tr:'tᵥ (s)',h_v:'V↑ (V)',h_vh:'V₀ (V)',
+h_vf:'v ตก (mm/s)',h_r:'r (µm)',h_q:'q (×10⁻¹⁹ C)',h_qe:'q / e',h_tn:'n จริง',h_tq:'q จริง (×10⁻¹⁹ C)',h_tr2:'r จริง (µm)',
+confirmClear:'แตะอีกครั้งเพื่อลบทั้งหมด',saved:'บันทึกการตั้งค่าแล้ว',linkMade:'สร้างลิงก์แล้ว — ส่งให้นักศึกษาได้เลย',copied:'คัดลอกลิงก์แล้ว',
+noHost:'ไฟล์นี้ยังไม่ได้อยู่บนเว็บ (เช่น GitHub Pages) ลิงก์จึงใช้ไม่ได้ กรุณาอัปโหลดไฟล์ก่อน แล้วค่อยสร้างลิงก์',
+noFull:'เบราว์เซอร์นี้เปิดเต็มจอไม่ได้ สำหรับ iPad: กดแชร์ → เพิ่มไปยังหน้าจอโฮม',
+f_d:'ระยะห่างแผ่นโลหะ d (mm)',f_rho:'ความหนาแน่นน้ำมัน ρ (kg/m³)',f_eta:'ความหนืดอากาศ η (Pa·s)',f_g:'g (m/s²)',f_vmax:'ความต่างศักย์สูงสุด (V)',
+f_rmin:'รัศมีหยดต่ำสุด (µm)',f_rmax:'รัศมีหยดสูงสุด (µm)',f_nmax:'ประจุสูงสุด (จำนวน e)',f_major:'ระยะเส้นสเกลหลัก (mm)',f_viewH:'ความสูงขอบเขตภาพ (mm)',
+f_brown:'การเคลื่อนที่แบบบราวน์ (สั่นเล็กน้อยแบบจริง)',f_invert:'ภาพกล้องกลับหัว',f_calc:'แสดงค่า r และ q ที่คำนวณให้นักศึกษาเห็น',f_move:'แสดงปุ่ม ↺ ⇡ (ย้ายหยดไปบน/ล่าง) ให้นักศึกษา'}
+};
+function t(k){return (T[lang][k]!==undefined)?T[lang][k]:(T.en[k]||k);}
+
+var CREDIT={th:'ผศ.ดร.รสสุมนต์ จารยะพันธุ์ · มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก อุเทนถวาย · ไม่สงวนลิขสิทธิ์',
+en:'Asst.Prof.Dr. Rossumont Jaryabhand · Rajamangala University of Technology Tawan-ok, Uthenthawai Campus · No Right Reserved'};
+
+/* ---------- settings load ---------- */
+function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function dec(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return JSON.parse(decodeURIComponent(escape(atob(s))));}
+function applyObj(o){for(var k in DEF){if(o&&o[k]!==undefined&&isFinite(+o[k]))S[k]=+o[k];}}
+var qs=new URLSearchParams(location.search);
+if(qs.get('lab')){try{var lo=dec(qs.get('lab'));applyObj(lo);locked=!!lo.lock;}catch(e){}}
+else{applyObj(lsGet('millikan2_settings'));}
+var curDist=+lsGet('millikan2_dist')||0;
+var savedLang=lsGet('millikan2_lang'); if(savedLang==='th')lang='th';
+var savedRows=lsGet('millikan2_rows');
+if(savedRows&&Array.isArray(savedRows.rows)){rows=savedRows.rows.filter(function(r){return r.tf!==''||r.tr!=='';});rowId=savedRows.rowId||rows.length;dropCount=savedRows.dropCount||0;}
+function saveRows(){lsSet('millikan2_rows',{rows:rows,rowId:rowId,dropCount:dropCount});}
+
+/* ---------- physics ---------- */
+function massOf(r){return 4/3*Math.PI*Math.pow(r,3)*S.rho;}
+function hoverV(r,n){return massOf(r)*S.g*(S.d*1e-3)/(n*EC);}
+function pickN(r,base){
+ var steps=[-2,-1,1,2];
+ for(var i=0;i<300;i++){
+  var n=(base==null)?1+Math.floor(Math.pow(Math.random(),1.5)*S.nmax):base+steps[Math.floor(Math.random()*4)];
+  if(n<1||n>S.nmax||n===base)continue;
+  var vh=hoverV(r,n);
+  if(vh<=0.85*S.vmax&&vh>=0.03*S.vmax)return n;
+ }
+ return null;
+}
+function startY(){return S.d/2+S.viewH*0.4;}
+var cands=[],geo=null;
+function spray(){
+ cands=[];drop=null;
+ var N=7+Math.floor(Math.random()*4);
+ for(var i=0;i<N;i++){
+  var r=(S.rmin*0.6+Math.random()*(S.rmax*1.35-S.rmin*0.6))*1e-6;
+  var n=Math.random()<0.12?0:1+Math.floor(Math.pow(Math.random(),1.3)*S.nmax);
+  cands.push({r:r,n:n,x:(Math.random()-0.5)*S.viewH*0.62,y:S.d/2+S.viewH*(0.47-Math.random()*0.55),lost:false});
+ }
+ toast(t('pick'));
+}
+function selectCand(c){
+ dropCount++;c.id=dropCount;c.state=1;drop=c;saveRows();
+}
+function ionize(){
+ if(!drop||drop.lost){toast(t('noDropRec'));return;}
+ var n2=pickN(drop.r,drop.n);
+ if(!n2){var st=[-2,-1,1,2];n2=drop.n+st[Math.floor(Math.random()*4)];if(n2<0)n2=1;if(n2>S.nmax)n2=S.nmax;if(n2===drop.n)n2=drop.n===1?2:drop.n-1;}
+ if(Math.random()<0.15){toast(t('ionFail'));return;}
+ drop.n=n2;drop.state++;toast(t('ionized'));
+}
+function gauss(){var u=1-Math.random(),v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function stepOne(o,dt){
+ if(o.lost)return;
+ var k=6*Math.PI*S.eta*o.r;
+ var Fg=massOf(o.r)*S.g;
+ var Fe=0;
+ if(fieldOn){Fe=o.n*EC*(volt/(S.d*1e-3))*(topPlus?1:-1);} /* drops carry negative charge: top plate + pulls them up */
+ var vy=(Fe-Fg)/k;
+ o.y+=vy*dt*1000;
+ if(S.brown){var s=Math.sqrt(2*KB*TK/k*dt)*1000;o.y+=s*gauss();o.x+=s*gauss();}
+ var xl=S.viewH*0.35;
+ if(o.x>xl)o.x=2*xl-o.x; if(o.x<-xl)o.x=-2*xl-o.x;
+ if(o.y<=0||o.y>=S.d){o.lost=true;}
+}
+function step(dt){
+ for(var i=0;i<cands.length;i++)stepOne(cands[i],dt);
+ cands=cands.filter(function(c){return !c.lost||c===drop;});
+ if(drop&&!drop.lost){} 
+}
+
+/* ---------- drawing ---------- */
+var cv=$('scope'),cx=cv.getContext('2d');
+function draw(){
+ if(view!=='lab')return;
+ var w=cv.clientWidth,h=cv.clientHeight,dpr=window.devicePixelRatio||1;
+ if(w<10||h<10)return;
+ if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+ cx.setTransform(dpr,0,0,dpr,0,0);
+ cx.clearRect(0,0,w,h);
+ var R=Math.max(40,Math.min(w,h-34)/2-10),X=w/2,Y=h/2+6,ppm=2*R/S.viewH;
+ cx.save();cx.beginPath();cx.arc(X,Y,R,0,2*Math.PI);cx.clip();
+ var g=cx.createRadialGradient(X-R*0.25,Y-R*0.25,R*0.05,X,Y,R);
+ g.addColorStop(0,'#1b3550');g.addColorStop(1,'#071320');cx.fillStyle=g;cx.fillRect(X-R,Y-R,2*R,2*R);
+ /* reticle */
+ var kmax=Math.floor((S.viewH/2)/S.major+1e-9);
+ cx.strokeStyle='rgba(200,220,240,0.5)';cx.lineWidth=1;cx.fillStyle='rgba(238,232,218,0.85)';
+ cx.font='13px '+MONO;cx.textBaseline='middle';
+ for(var k=-kmax;k<=kmax;k++){
+  var yy=Math.round(Y-k*S.major*ppm)+0.5;
+  cx.beginPath();cx.moveTo(X-R,yy);cx.lineTo(X+R,yy);cx.stroke();
+  var half=Math.sqrt(Math.max(0,R*R-(yy-Y)*(yy-Y)));
+  cx.fillText(String(kmax-k),X-half+8,yy-9);
+ }
+ cx.strokeStyle='rgba(200,220,240,0.25)';cx.beginPath();cx.moveTo(X+0.5,Y-R);cx.lineTo(X+0.5,Y+R);cx.stroke();
+ var minor=S.major/5,mmax=Math.floor((S.viewH/2)/minor+1e-9);
+ cx.strokeStyle='rgba(200,220,240,0.45)';
+ for(var m=-mmax;m<=mmax;m++){var ym=Math.round(Y-m*minor*ppm)+0.5;cx.beginPath();cx.moveTo(X-6,ym);cx.lineTo(X+6,ym);cx.stroke();}
+ /* drops */
+ var dir=S.invert?-1:1;geo={X:X,Y:Y,R:R,ppm:ppm,dir:dir};
+ for(var ci2=0;ci2<cands.length;ci2++){
+  var o=cands[ci2];if(o.lost)continue;
+  var sy=Y-(o.y-S.d/2)*ppm*dir, sx=X+o.x*ppm;
+  var rad=2.2+Math.max(0,(o.r*1e6-0.4))*3.2;
+  var sel=(o===drop),dim=(drop&&!sel);
+  if(sy>=Y-R-rad&&sy<=Y+R+rad){
+   cx.globalAlpha=dim?0.3:1;
+   var gg=cx.createRadialGradient(sx,sy,0,sx,sy,rad*4);
+   gg.addColorStop(0,'rgba(255,248,225,1)');gg.addColorStop(0.25,'rgba(240,195,90,0.9)');gg.addColorStop(1,'rgba(232,178,58,0)');
+   cx.fillStyle=gg;cx.beginPath();cx.arc(sx,sy,rad*4,0,2*Math.PI);cx.fill();
+   cx.globalAlpha=1;
+   if(sel){cx.strokeStyle='#7FD4A8';cx.lineWidth=1.5;cx.beginPath();cx.arc(sx,sy,rad*4+6,0,2*Math.PI);cx.stroke();}
+  }else if(sel){
+   var up=sy<Y-R;
+   cx.fillStyle='#E8B23A';cx.beginPath();
+   var ay=up?Y-R+16:Y+R-16, ax=X;
+   if(up){cx.moveTo(ax,ay-10);cx.lineTo(ax-10,ay+6);cx.lineTo(ax+10,ay+6);}else{cx.moveTo(ax,ay+10);cx.lineTo(ax-10,ay-6);cx.lineTo(ax+10,ay-6);}
+   cx.fill();
+  }
+ }
+ if(drop&&drop.lost){cx.fillStyle='#E8B23A';cx.font='bold 16px system-ui,sans-serif';cx.textAlign='center';cx.fillText(t('lost'),X,Y);cx.textAlign='left';}
+ if(!drop&&!cands.some(function(c){return !c.lost;})){cx.fillStyle='rgba(238,232,218,0.7)';cx.font='16px system-ui,sans-serif';cx.textAlign='center';cx.fillText(t('noDrop'),X,Y);cx.textAlign='left';}
+ if(!drop&&cands.some(function(c){return !c.lost;})){cx.fillStyle='#7FD4A8';cx.font='bold 16px system-ui,sans-serif';cx.textAlign='center';cx.fillText(t('pick'),X,Y+R-40);cx.textAlign='left';}
+ cx.restore();
+ cx.strokeStyle='rgba(150,180,215,0.45)';cx.lineWidth=2;cx.beginPath();cx.arc(X,Y,R+1,0,2*Math.PI);cx.stroke();
+ /* labels */
+ cx.textBaseline='top';cx.font='bold 14px '+MONO;
+ cx.fillStyle=!fieldOn?'#8C9DB2':(topPlus?'#7FD4A8':'#E8B23A');
+ cx.font='bold 26px '+MONO;cx.fillText(volt+' V',12,8);
+ cx.font='bold 14px '+MONO;cx.fillText(fieldOn?('E ON  '+(lang==='th'?'บน ':'top ')+(topPlus?'+':'−')):'E OFF',12,40);
+ /* plate polarity marks */
+ var px=Math.min(w-30,X+R+40);
+ cx.textAlign='center';cx.textBaseline='middle';cx.font='bold 30px '+MONO;
+ if(fieldOn){
+  cx.fillStyle=topPlus?'#7FD4A8':'#E8B23A';cx.fillText(topPlus?'+':'−',px,Y-R+18);
+  cx.fillStyle=topPlus?'#E8B23A':'#7FD4A8';cx.fillText(topPlus?'−':'+',px,Y+R-18);
+ }else{cx.fillStyle='rgba(140,157,178,.5)';cx.fillText('0',px,Y-R+18);cx.fillText('0',px,Y+R-18);}
+ cx.strokeStyle='rgba(150,180,215,.4)';cx.lineWidth=2;
+ cx.beginPath();cx.moveTo(px-16,Y-R);cx.lineTo(px+16,Y-R);cx.moveTo(px-16,Y+R);cx.lineTo(px+16,Y+R);cx.stroke();
+ cx.textAlign='left';cx.textBaseline='top';
+ if(drop&&!drop.lost){cx.fillStyle='#8C9DB2';cx.font='13px '+MONO;cx.fillText(t('dropIs').replace('{id}',drop.id).replace('{s}',drop.state),12,60);}
+ var cr=null,ci=0;for(var q=0;q<rows.length;q++){if(rows[q].id===lastRowId){cr=rows[q];ci=q+1;}}
+ if(cr){
+  var by=h-10,okc='#7FD4A8',nc='rgba(140,157,178,.8)';
+  cx.textBaseline='bottom';cx.font='bold 15px '+MONO;
+  var l3=cr.tr!==''?('tᵥ '+(cr.tr==='∞'?'∞':(+cr.tr).toFixed(2)+' s')+'  '+cr.V+' V'+(cr.dir===-1?' ↑':'')+' ✓'):'tᵥ —';
+  var l2=cr.tf!==''?('t₀ '+(+cr.tf).toFixed(2)+' s ✓'):'t₀ —';
+  cx.fillStyle=cr.tr!==''?okc:nc;cx.fillText(l3,12,by);
+  cx.fillStyle=cr.tf!==''?okc:nc;cx.fillText(l2,12,by-20);
+  cx.fillStyle='#EEE8DA';cx.font='13px '+MONO;cx.fillText(t('cur')+' '+ci+' · '+t('h_drop')+' '+cr.drop+(cr.state>1?'.'+cr.state:'')+' · '+cr.dist+' mm',12,by-42);
+  cx.textBaseline='top';
+ }
+ if(teacher&&showAns&&drop&&!drop.lost){
+  cx.fillStyle='#E8B23A';cx.font='12px '+MONO;
+  var lines=['n = '+drop.n,'q = '+(drop.n*EC*1e19).toFixed(3)+'e-19 C','r = '+(drop.r*1e6).toFixed(3)+' µm','V0 = '+hoverV(drop.r,drop.n).toFixed(1)+' V'];
+  for(var i=0;i<lines.length;i++)cx.fillText(lines[i],12,82+i*16);
+ }
+}
+
+cv.addEventListener('click',function(e){
+ if(!geo)return;
+ var rc=cv.getBoundingClientRect(),px=e.clientX-rc.left,py=e.clientY-rc.top,best=null,bd=1e9;
+ for(var i=0;i<cands.length;i++){var o=cands[i];if(o.lost)continue;
+  var sx=geo.X+o.x*geo.ppm,sy=geo.Y-(o.y-S.d/2)*geo.ppm*geo.dir,dd=Math.hypot(sx-px,sy-py);
+  if(dd<bd){bd=dd;best=o;}}
+ if(best&&bd<45&&best!==drop){selectCand(best);toast(t('picked'));}
+});
+/* ---------- stopwatch ---------- */
+var sw={run:false,t0:0,acc:0};
+function swTime(){return sw.acc+(sw.run?(performance.now()-sw.t0)/1000:0);}
+function fmt(x){var cs=Math.floor(x*100+1e-6),m=Math.floor(cs/6000),s=Math.floor(cs/100)%60,c=cs%100;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s+'.'+(c<10?'0':'')+c;}
+var lastSw='';
+function swRender(){var s=fmt(swTime());if(s!==lastSw){lastSw=s;$('swDisp').textContent=s;}}
+$('btnSW').onclick=function(){
+ if(sw.run){sw.acc=swTime();sw.run=false;}else{sw.t0=performance.now();sw.run=true;}
+ updSWBtn();
+};
+$('btnSWR').onclick=function(){sw.run=false;sw.acc=0;updSWBtn();swRender();};
+function updSWBtn(){var b=$('btnSW');b.textContent=sw.run?'❚❚':'▶';b.className=sw.run?'run':'';}
+
+/* ---------- controls ---------- */
+function setV(v){volt=Math.max(0,Math.min(S.vmax,Math.round(v)));if($('btnHover'))$('btnHover').style.display=(fieldOn&&volt>0)?'':'none';if($('btnRec'))$('btnRec').textContent=(fieldOn&&volt>0)?t('recRise'):t('recFall');$('vVal').textContent=volt;var sl=$('vSl');sl.max=S.vmax;if(+sl.value!==volt)sl.value=volt;}
+function userV(v){var was=volt;setV(v);if(volt>0&&was===0){fieldOn=true;topPlus=true;}if(volt===0)fieldOn=false;updFieldBtns();}
+$('vSl').addEventListener('input',function(){userV(+this.value);});
+Array.prototype.forEach.call(document.querySelectorAll('[data-dv]'),function(b){
+ var dv=+b.getAttribute('data-dv'),tm=null,iv=null,rep=false;
+ function stop(){clearTimeout(tm);clearInterval(iv);tm=null;iv=null;}
+ function press(){stop();rep=false;tm=setTimeout(function(){rep=true;userV(volt+dv);iv=setInterval(function(){userV(volt+dv);},90);},450);}
+ ['pointerdown','touchstart','mousedown'].forEach(function(ev){b.addEventListener(ev,function(){if(!tm&&!iv)press();},{passive:true});});
+ ['pointerup','pointerleave','pointercancel','touchend','touchcancel','mouseup','mouseleave'].forEach(function(ev){b.addEventListener(ev,stop);});
+ b.addEventListener('click',function(){stop();if(!rep)userV(volt+dv);rep=false;});
+ b.addEventListener('contextmenu',function(e){e.preventDefault();});
+});
+$('btnE').onclick=function(){fieldOn=!fieldOn;topPlus=true;updFieldBtns();};
+function plateSVG(){var G='#7FD4A8',A='#E8B23A',M='#8C9DB2';var tc=!fieldOn?M:(topPlus?G:A),bc=!fieldOn?M:(topPlus?A:G),ts=!fieldOn?'0':(topPlus?'+':'\u2212'),bs=!fieldOn?'0':(topPlus?'\u2212':'+');
+ return '<svg width="50" height="40" viewBox="0 0 50 40"><rect x="3" y="8" width="26" height="4" rx="1" fill="'+tc+'"/><rect x="3" y="28" width="26" height="4" rx="1" fill="'+bc+'"/>'+(fieldOn?'<path d="M16 15 V25" stroke="'+(topPlus?G:A)+'" stroke-width="1.5" stroke-dasharray="2 2"/>':'')+'<text x="41" y="10" text-anchor="middle" dominant-baseline="central" font-family="monospace" font-weight="800" font-size="20" fill="'+tc+'">'+ts+'</text><text x="41" y="30" text-anchor="middle" dominant-baseline="central" font-family="monospace" font-weight="800" font-size="20" fill="'+bc+'">'+bs+'</text></svg>';}
+function updFieldBtns(){
+ $('btnHover').style.display=(fieldOn&&volt>0)?'':'none';
+ var e=$('btnE');e.innerHTML=plateSVG();e.className='chip ebtn'+(fieldOn?(topPlus?' on':' onm'):'');
+ $('btnRec').textContent=(fieldOn&&volt>0)?t('recRise'):t('recFall');
+}
+$('btnSpray').onclick=spray;
+$('btnIon').onclick=ionize;
+$('btnLow').onclick=function(){
+ if(!drop||drop.lost){toast(t('noDropRec'));return;}
+ drop.y=S.d/2-S.viewH*0.4;drop.x=(Math.random()-0.5)*S.viewH*0.3;
+ var rising=fieldOn&&volt>0&&drop.n*EC*(volt/(S.d*1e-3))>massOf(drop.r)*S.g;
+ if(!rising)toast(t('needV'));
+};
+$('btnHome').onclick=function(){if(drop&&!drop.lost){drop.y=startY();drop.x=(Math.random()-0.5)*S.viewH*0.3;}else toast(t('noDropRec'));};
+
+/* ---------- data table ---------- */
+function getDist(){return curDist>0?curDist:S.major;}
+function newRow(){var r={id:++rowId,drop:drop.id,state:drop.state,dist:getDist(),tf:'',tr:'',V:'',Vh:'',r:drop.r,n:drop.n};rows.push(r);return r;}
+function rec(f,val){
+ if(!drop){toast(t('noDropRec'));return;}
+ var row=null;
+ for(var i=0;i<rows.length;i++){if(rows[i].id===lastRowId)row=rows[i];}
+ if(!row||row.drop!==drop.id||row.state!==drop.state||(row[f]!==''&&row[f]!=null))row=newRow();
+ row[f]=val;if(f==='tr'){row.V=volt;var Fe=drop.n*EC*(volt/(S.d*1e-3)),Fg=massOf(drop.r)*S.g;row.dir=(val==='∞')?1:(Fe>Fg?-1:1);}lastRowId=row.id;
+ var lab=(f==='tf'?'t₀ = '+val.toFixed(2)+' s':val==='∞'?'tᵥ = ∞ ('+t('hovered')+') · '+volt+' V':'tᵥ = '+val.toFixed(2)+' s · '+volt+' V');
+ saveRows();renderTable();toast('✓ '+lab);
+ var db=$('btnData');db.classList.add('flash');setTimeout(function(){db.classList.remove('flash');},900);
+}
+$('btnHover').onclick=function(){rec('tr','∞');};
+$('btnRec').onclick=function(){var tt=+swTime().toFixed(2);if(!(tt>0)){toast(t('noTime'));return;}rec(fieldOn&&volt>0?'tr':'tf',tt);};
+function calcRow(row){
+ var tf=+row.tf,dist=+row.dist;
+ if(!(tf>0&&dist>0))return null;
+ var vf=dist/tf*1e-3, r=Math.sqrt(9*S.eta*vf/(2*S.rho*S.g)), q=null;
+ var tr=+row.tr,V=+row.V,Vh=+row.Vh;
+ if(row.tr==='∞')tr=Infinity;
+ if(tr>0&&V>0){var vv=(tr===Infinity)?0:dist/tr*1e-3*(row.dir===-1?-1:1);q=6*Math.PI*S.eta*r*(vf-vv)*(S.d*1e-3)/V;}
+ return {vf:vf,r:r,q:q};
+}
+function f(x,d){return (x==null||!isFinite(x))?'':x.toFixed(d);}
+function renderTable(){
+ var showCalc=teacher||!!S.calc, ans=teacher&&showAns;
+ var h='<tr><th>'+t('h_no')+'</th><th>'+t('h_drop')+'</th><th>'+t('h_dist')+'</th><th>'+t('h_tf')+'</th><th>'+t('h_tr')+'</th><th>V (V)</th>';
+ if(showCalc)h+='<th class="calc">'+t('h_vf')+'</th><th class="calc">'+t('h_r')+'</th><th class="calc">'+t('h_q')+'</th>';
+ if(ans)h+='<th class="ans">'+t('h_qe')+'</th><th class="ans">'+t('h_tn')+'</th><th class="ans">'+t('h_tq')+'</th><th class="ans">'+t('h_tr2')+'</th>';
+ h+='<th></th></tr>';
+ rows.slice().reverse().forEach(function(r,ri){
+  h+='<tr'+(r.id===lastRowId?' class="hl"':'')+'><td>'+(rows.length-ri)+'</td><td>'+r.drop+(r.state>1?'.'+r.state:'')+'</td>';
+  ['dist','tf','tr','V'].forEach(function(k){h+='<td><input inputmode="decimal" data-id="'+r.id+'" data-k="'+k+'" value="'+(r[k]===''||r[k]==null?'':r[k])+'"></td>';});
+  var c=calcRow(r);
+  if(showCalc)h+='<td class="calc">'+(c?f(c.vf*1000,4):'')+'</td><td class="calc">'+(c?f(c.r*1e6,3):'')+'</td><td class="calc">'+(c&&c.q?f(c.q*1e19,3):'')+'</td>';
+  if(ans)h+='<td class="ans">'+(c&&c.q?f(c.q/EC,2):'')+'</td><td class="ans">'+r.n+'</td><td class="ans">'+f(r.n*EC*1e19,3)+'</td><td class="ans">'+f(r.r*1e6,3)+'</td>';
+  h+='<td><button class="xbtn" data-del="'+r.id+'">✕</button></td></tr>';
+ });
+ $('tbl').innerHTML=h;
+}
+$('tbl').addEventListener('change',function(e){
+ var el=e.target;if(!el.getAttribute('data-k'))return;
+ var id=+el.getAttribute('data-id'),k=el.getAttribute('data-k');
+ rows.forEach(function(r){if(r.id===id){var v=el.value.trim().replace(',','.');r[k]=v===''?'':(/^(∞|inf)$/i.test(v)?'∞':+v);}});
+ saveRows();renderTable();
+});
+$('tbl').addEventListener('click',function(e){
+ var d=e.target.getAttribute('data-del');if(!d)return;
+ rows=rows.filter(function(r){return r.id!==+d;});saveRows();renderTable();
+});
+$('btnAddRow').onclick=function(){
+ if(drop){newRow();}else if(rows.length){var L=rows[rows.length-1];rows.push(Object.assign({},L,{id:++rowId,tf:'',tr:'',V:'',Vh:''}));}
+ else{toast(t('noDropRec'));return;}
+ saveRows();renderTable();
+};
+var clrArm=null;
+$('btnClear').onclick=function(){
+ var b=$('btnClear');
+ if(!clrArm){b.textContent=t('confirmClear');b.style.background='#E5736B';b.style.color='#0B1A2B';clrArm=setTimeout(resetClr,3000);return;}
+ resetClr();rows=[];lastRowId=0;saveRows();renderTable();toast('✓');
+};
+function resetClr(){clearTimeout(clrArm);clrArm=null;var b=$('btnClear');b.textContent=t('clear');b.style.background='';b.style.color='';}
+$('btnCSV').onclick=function(){
+ var showCalc=teacher||!!S.calc, ans=teacher&&showAns;
+ var head=[t('h_no'),t('h_drop'),t('h_state'),t('h_dist'),t('h_tf'),t('h_tr'),'V (V)'];
+ if(showCalc)head=head.concat([t('h_vf'),t('h_r'),t('h_q')]);
+ if(ans)head=head.concat([t('h_qe'),t('h_tn'),t('h_tq'),t('h_tr2')]);
+ var lines=[head.map(csvq).join(',')];
+ rows.forEach(function(r,ri){
+  var a=[ri+1,r.drop,r.state,r.dist,r.tf,r.tr,r.V],c=calcRow(r);
+  if(showCalc)a=a.concat([c?f(c.vf*1000,4):'',c?f(c.r*1e6,3):'',c&&c.q?f(c.q*1e19,3):'']);
+  if(ans)a=a.concat([c&&c.q?f(c.q/EC,2):'',r.n,f(r.n*EC*1e19,3),f(r.r*1e6,3)]);
+  lines.push(a.map(csvq).join(','));
+ });
+ var blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+ var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='millikan2_data.csv';document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+};
+function csvq(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+
+function applyDist(show){
+ var el=$('distIn'),v=parseFloat(String(el.value).replace(',','.'));
+ if(!(v>0))return;
+ curDist=v;lsSet('millikan2_dist',v);
+ var tgt=null;for(var i=0;i<rows.length;i++){if(rows[i].id===lastRowId)tgt=rows[i];}
+ if(!tgt&&rows.length)tgt=rows[rows.length-1];
+ if(tgt)tgt.dist=v;
+ saveRows();renderTable();
+ if(show){var vis=Math.round(S.viewH*0.8*100)/100;toast(v>vis?t('distWarn').replace('{x}',vis):'✓ '+v+' mm');}
+}
+var distTm=null;
+$('distIn').addEventListener('input',function(){clearTimeout(distTm);distTm=setTimeout(function(){applyDist(false);},300);});
+$('distIn').addEventListener('change',function(){clearTimeout(distTm);applyDist(true);});
+$('distIn').addEventListener('blur',function(){var v=parseFloat(String(this.value).replace(',','.'));if(!(v>0))this.value=getDist();});
+$('distIn').addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+/* ---------- guide ---------- */
+function guideHTML(){
+ var inv=S.invert,mi=+(S.major/5).toFixed(4),mv=!!S.moveBtns;
+ if(lang==='th')return '<h3>ค่าคงที่</h3><div class="eq">d = '+S.d+' mm · ρ = '+S.rho+' kg/m³ · η = '+S.eta+' Pa·s · g = '+S.g+' m/s²</div><div class="eq">เส้นสเกลหลักห่างกัน '+S.major+' mm · ขีดเล็ก '+mi+' mm</div>'+
+ '<h3>ปุ่ม</h3><ul><li><b>💧</b> พ่นหยด · <b>☢</b> ฉายรังสี เปลี่ยนประจุหยดเดิม'+(mv?' · <b>↺</b> นำหยดไปด้านบน · <b>⇡</b> นำหยดไปด้านล่าง':'')+'</li><li>บังคับหยดด้วย V: ลด V/ตัดสนาม → หยดตก · เพิ่ม V → หยดช้าลง / ลอยนิ่ง / ลอยขึ้น · อย่าให้ชนแผ่นโลหะ</li><li><b>ปรับ V มากกว่า 0</b> สนามเปิดเอง (แผ่นบน +) · <b>ปุ่มรูปแผ่นโลหะ</b> สวิตช์ตัด/ต่อสนามโดยค่า V เดิมยังอยู่</li><li><b>แถบเลื่อน</b> ปรับ V · <b>◀ ▶</b> ทีละ 1 V</li><li><b>บันทึก t₀ / tᵥ</b> ส่งเวลาจากนาฬิกาเข้าตาราง (ปุ่มเปลี่ยนเองตามสนาม)</li></ul>'+
+ '<h3>วิธีทดลอง (1 แถว = 1 ครั้ง)</h3><ol><li>พ่นหยด → เห็นหลายหยด · <b>แตะเลือก 1 หยด</b> ที่ตกช้าปานกลาง (หยดอื่นจะจางลง) · V = 0 → หยดตก</li><li>จับเวลาหยดตกผ่าน 1 ช่องสเกลหลัก → กด <b>บันทึก t₀</b></li><li>เพิ่ม V (แผ่นบน +) → หยดยังตก แต่ช้าลง</li><li>จับเวลาหยดตกผ่าน 1 ช่องเดิม → กด <b>บันทึก tᵥ</b> (V ถูกบันทึกให้เอง)</li><li>ครบ t₀ กับ tᵥ = 1 ครั้ง · แตะปุ่มแผ่นโลหะเพื่อตัด/ต่อสนามโดย V เดิมยังอยู่ · ทำซ้ำ / ฉายรังสี / เปลี่ยนหยด</li></ol>'+
+ '<h3>สมการ</h3><div class="eq">v₀ = ระยะ/t₀ · vᵥ = ระยะ/tᵥ</div><div class="eq">r = √( 9ηv₀ / 2ρg )</div><div class="eq">q = 6πηr (v₀ − vᵥ) d / V</div><p style="color:var(--mut)">ถ้าใส่ V มากจนหยดลอยขึ้น ให้ vᵥ เป็นค่าลบ · ถ้าหยด<b>ลอยนิ่ง</b> กด ⏸ ลอยนิ่ง → tᵥ = ∞, vᵥ = 0 → q = 6πηr v₀ d / V</p>'+
+ '<p>หาค่าที่ q ทุกค่าเป็นจำนวนเต็มเท่าของค่านั้น → e</p><p style="color:var(--mut)">ไม่คิดแรงลอยตัวของอากาศ · ตั้ง <b>ระยะที่จับเวลา</b> ในหน้าตาราง 📋 ครั้งเดียว ใช้กับทุกแถวถัดไป'+(inv?' · <b>ภาพกล้องกลับหัว:</b> หยดที่ตกจะดูเหมือนลอยขึ้น':'')+'</p>';
+ return '<h3>Constants</h3><div class="eq">d = '+S.d+' mm · ρ = '+S.rho+' kg/m³ · η = '+S.eta+' Pa·s · g = '+S.g+' m/s²</div><div class="eq">Major reticle lines '+S.major+' mm apart · small ticks '+mi+' mm</div>'+
+ '<h3>Buttons</h3><ul><li><b>💧</b> spray · <b>☢</b> ionize (changes the charge of the same drop)'+(mv?' · <b>↺</b> drop to the top · <b>⇡</b> drop to the bottom':'')+'</li><li>Steer the drop with V: lower V / cut the field → it falls · raise V → slower / hover / rise · don\'t let it hit a plate</li><li><b>Set V above 0</b> turns the field on (top plate +) · <b>Plate button</b> switches the field off/on keeping V</li><li><b>Slider</b> sets V · <b>◀ ▶</b> 1 V steps</li><li><b>Save t₀ / tᵥ</b> sends the stopwatch time to the table (switches with the field)</li></ul>'+
+ '<h3>Procedure (1 row = 1 run)</h3><ol><li>Spray → many drops appear · <b>tap one drop</b> that falls at a moderate speed (others fade) · V = 0 → it falls</li><li>Time it falling one major division → <b>Save t₀</b></li><li>Raise V (top plate +) → the drop still falls, but slower</li><li>Time it falling over the same division → <b>Save tᵥ</b> (V is saved automatically)</li><li>t₀ + tᵥ = one run · the plate button cuts/restores the field keeping V · repeat / ionize / new drop</li></ol>'+
+ '<h3>Equations</h3><div class="eq">v₀ = distance/t₀ · vᵥ = distance/tᵥ</div><div class="eq">r = √( 9ηv₀ / 2ρg )</div><div class="eq">q = 6πηr (v₀ − vᵥ) d / V</div><p style="color:var(--mut)">If V is so large that the drop rises, take vᵥ as negative · if the drop <b>hovers</b>, press ⏸ Hover → tᵥ = ∞, vᵥ = 0 → q = 6πηr v₀ d / V</p>'+
+ '<p>Find the value that every q is a whole-number multiple of → e</p><p style="color:var(--mut)">Air buoyancy neglected · set the <b>timed distance</b> once on the 📋 table page; it applies to every new row'+(inv?' · <b>Inverted image:</b> a falling drop appears to rise':'')+'</p>';
+}
+
+/* ---------- language ---------- */
+function applyLang(){
+ document.documentElement.lang=lang;
+ Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'),function(el){el.textContent=t(el.getAttribute('data-i18n'));});
+ $('btnLang').textContent=lang==='en'?'ไทย':'EN';
+ $('credit').textContent=CREDIT[lang];
+ document.title=t('title');
+ $('distIn').value=getDist();updFieldBtns();renderTable();$('guideBox').innerHTML=guideHTML();buildForm();
+}
+$('btnLang').onclick=function(){lang=lang==='en'?'th':'en';lsSet('millikan2_lang',lang);applyLang();};
+
+/* ---------- views ---------- */
+function setView(v){
+ view=(view===v)?'lab':v;
+ $('vLab').classList.toggle('act',view==='lab');$('vData').classList.toggle('act',view==='data');$('vGuide').classList.toggle('act',view==='guide');
+ $('btnData').classList.toggle('sel',view==='data');$('btnGuide').classList.toggle('sel',view==='guide');
+}
+$('btnData').onclick=function(){setView('data');};
+$('btnGuide').onclick=function(){setView('guide');};
+
+/* ---------- full screen ---------- */
+$('btnFull').onclick=function(){
+ var d=document,el=d.documentElement;
+ if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);return;}
+ var fn=el.requestFullscreen||el.webkitRequestFullscreen;
+ if(fn){try{var p=fn.call(el);if(p&&p.catch)p.catch(function(){toast(t('noFull'));});}catch(e){toast(t('noFull'));}}else toast(t('noFull'));
+};
+
+/* ---------- teacher ---------- */
+var taps=[];
+$('appTitle').onclick=function(){var n=Date.now();taps=taps.filter(function(x){return n-x<2000;});taps.push(n);if(taps.length>=5){taps=[];openTeacher();}};
+$('btnTeacher').onclick=openTeacher;
+function openTeacher(){if(teacher){showT();return;}$('pwIn').value='';$('pwErr').textContent='';$('mPw').classList.add('show');setTimeout(function(){$('pwIn').focus();},50);}
+function checkPw(){
+ var v=$('pwIn').value.trim().replace(/[‘’'`´ʼ]/g,'‘');
+ if(v===PW){teacher=true;$('mPw').classList.remove('show');updTeacherUI();showT();}else $('pwErr').textContent=t('pwWrong');
+}
+$('pwOk').onclick=checkPw;
+$('pwIn').onkeydown=function(e){if(e.key==='Enter')checkPw();};
+$('pwCancel').onclick=function(){$('mPw').classList.remove('show');};
+var FIELDS=[['d','f_d',0.5],['rho','f_rho',1],['eta','f_eta',1e-7],['g','f_g',0.01],['vmax','f_vmax',1],['rmin','f_rmin',0.01],['rmax','f_rmax',0.01],['nmax','f_nmax',1],['major','f_major',0.05],['viewH','f_viewH',0.1]];
+var CHECKS=[['brown','f_brown'],['invert','f_invert'],['calc','f_calc'],['moveBtns','f_move']];
+function buildForm(){
+ var h='';
+ FIELDS.forEach(function(x){h+='<label for="fi_'+x[0]+'">'+t(x[1])+'</label><input type="number" id="fi_'+x[0]+'" step="'+x[2]+'" value="'+S[x[0]]+'">';});
+ CHECKS.forEach(function(x){h+='<label for="fc_'+x[0]+'">'+t(x[1])+'</label><input type="checkbox" id="fc_'+x[0]+'"'+(S[x[0]]?' checked':'')+' style="justify-self:start;width:22px;height:22px">';});
+ $('fgrid').innerHTML=h;
+}
+function showT(){buildForm();$('chkAns').checked=showAns;$('linkOut').style.display='none';$('tCopy').style.display='none';$('linkWarn').textContent='';$('mT').classList.add('show');}
+function readForm(){
+ FIELDS.forEach(function(x){var v=parseFloat($('fi_'+x[0]).value);if(isFinite(v)&&v>0)S[x[0]]=v;});
+ CHECKS.forEach(function(x){S[x[0]]=$('fc_'+x[0]).checked?1:0;});
+ S.nmax=Math.max(1,Math.round(S.nmax));
+ if(S.rmin>S.rmax){var tmp=S.rmin;S.rmin=S.rmax;S.rmax=tmp;}
+ if(S.viewH>=S.d)S.viewH=S.d*0.8;
+}
+$('tSave').onclick=function(){
+ readForm();showAns=$('chkAns').checked;
+ if(!locked)lsSet('millikan2_settings',S);
+ setV(volt);
+ if(drop&&!drop.lost&&(drop.y<=0||drop.y>=S.d))drop.lost=true;
+ applyLang();updTeacherUI();toast(t('saved'));
+};
+$('tDef').onclick=function(){S=Object.assign({},DEF);buildForm();};
+$('chkAns').onchange=function(){showAns=this.checked;renderTable();};
+$('tLink').onclick=function(){
+ readForm();
+ var tok='';for(var i=0;i<24;i++)tok+='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*56)];
+ var o=Object.assign({},S,{lock:1,t:tok});
+ var bad=(location.origin==='null'||location.protocol==='file:'||location.protocol==='about:'||location.protocol==='blob:');
+ var url=(bad?'(your-site)/millikan.html':location.origin+location.pathname)+'?lab='+enc(o);
+ $('linkOut').value=url;$('linkOut').style.display='block';$('tCopy').style.display=bad?'none':'inline-block';
+ $('linkWarn').textContent=bad?t('noHost'):t('linkMade');
+};
+$('tCopy').onclick=function(){
+ var v=$('linkOut').value;
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(function(){toast(t('copied'));},function(){$('linkOut').select();});}
+ else{$('linkOut').select();try{document.execCommand('copy');toast(t('copied'));}catch(e){}}
+};
+$('tExit').onclick=function(){teacher=false;$('mT').classList.remove('show');updTeacherUI();};
+$('tClose').onclick=function(){$('mT').classList.remove('show');};
+function updMoveBtns(){var on=teacher||!!S.moveBtns;$('btnHome').classList.toggle('hid',!on);$('btnLow').classList.toggle('hid',!on);}
+function updTeacherUI(){
+ updMoveBtns();
+ $('btnTeacher').classList.toggle('tch',teacher);
+ $('lockBadge').style.display=locked?'inline':'none';
+ $('btnTeacher').style.display=(locked&&!teacher)?'none':'inline-block';
+ renderTable();
+}
+
+/* ---------- toast ---------- */
+var tt=null;
+function toast(m){var el=$('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){el.classList.remove('show');},2200);}
+
+/* ---------- start ---------- */
+setV(0);
+applyLang();updTeacherUI();updSWBtn();
+var last=performance.now();
+function loop(now){var dt=Math.min(0.05,Math.max(0,(now-last)/1000));last=now;step(dt);draw();swRender();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
